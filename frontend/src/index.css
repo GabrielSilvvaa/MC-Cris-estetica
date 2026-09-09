@@ -1,0 +1,71 @@
+@import "tailwindcss";
+
+@layer base {
+  :root {
+    --color-bg-main: #FAF6F0;
+    --color-primary: #C4A883;
+    --color-primary-dark: #A68A64;
+    --color-primary-light: #EADECF;
+    --color-primary-soft: #F5EFE6;
+    --color-text-main: #4A3F35;
+    --color-text-dark: #2D241E;
+    --color-text-muted: #7A6C60;
+    --color-border: #E8DFD5;
+    --color-rose-soft: #F9EFEF;
+    --color-rose-accent: #E8B4B8;
+  }
+
+  body {
+    background-color: var(--color-bg-main);
+    color: var(--color-text-main);
+    font-family: 'Plus Jakarta Sans', 'Inter', system-ui, -apple-system, sans-serif;
+  }
+
+  h1, h2, h3, .font-serif-title {
+    font-family: 'Playfair Display', 'Cormorant Garamond', Georgia, serif;
+  }
+}
+
+.font-script {
+  font-family: 'Great Vibes', cursive;
+}
+
+.font-serif {
+  font-family: 'Playfair Display', 'Cormorant Garamond', Georgia, serif;
+}
+
+/* Custom Scrollbar */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: #FAF6F0;
+}
+::-webkit-scrollbar-thumb {
+  background: #D9CBBA;
+  border-radius: 9999px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #C4A883;
+}
+
+/* Glassmorphism sutil para painéis e cartões */
+.glass-panel {
+  background: rgba(255, 255, 255, 0.85);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(232, 223, 213, 0.7);
+}
+
+.card-luxury {
+  background: #FFFFFF;
+  border: 1px solid #EAE0D5;
+  box-shadow: 0 4px 20px -2px rgba(74, 63, 53, 0.05);
+  transition: all 0.2s ease-in-out;
+}
+
+.card-luxury:hover {
+  box-shadow: 0 8px 30px -4px rgba(74, 63, 53, 0.09);
+  border-color: #D9CBBA;
+}
