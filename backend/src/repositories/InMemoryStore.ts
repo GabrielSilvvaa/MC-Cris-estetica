@@ -69,6 +69,7 @@ const clientesSeed: Cliente[] = [
   {
     id: 'cli-1',
     nome: 'Cliente Exemplo 1',
+    cpf: '111.444.777-35',
     telefone: '(11) 90000-0001',
     email: 'cliente1@exemplo.com',
     data_nascimento: '1990-01-01',
@@ -81,6 +82,7 @@ const clientesSeed: Cliente[] = [
   {
     id: 'cli-2',
     nome: 'Cliente Exemplo 2',
+    cpf: '222.555.888-46',
     telefone: '(11) 90000-0002',
     email: 'cliente2@exemplo.com',
     data_nascimento: '1992-06-15',
@@ -93,6 +95,7 @@ const clientesSeed: Cliente[] = [
   {
     id: 'cli-3',
     nome: 'Cliente Exemplo 3',
+    cpf: '333.666.999-57',
     telefone: '(11) 90000-0003',
     email: 'cliente3@exemplo.com',
     data_nascimento: '1985-03-20',
@@ -348,19 +351,29 @@ export class InMemoryClienteRepository implements IClienteRepository {
     return this.clientes.find(c => c.id === id) || null;
   }
 
+  async buscarPorCpf(cpf: string): Promise<Cliente | null> {
+    // TODO: [DB TEAM] SELECT * FROM clientes WHERE REGEXP_REPLACE(cpf, '\D', '', 'g') = $1
+    if (!cpf) return null;
+    const limpo = cpf.replace(/\D/g, '');
+    return this.clientes.find(c => c.cpf && c.cpf.replace(/\D/g, '') === limpo) || null;
+  }
+
   async buscarPorEmailOuTelefone(email?: string, telefone?: string): Promise<Cliente | null> {
     // TODO: [DB TEAM] SELECT * FROM clientes WHERE email = $1 OR telefone = $2
     return this.clientes.find(c => (email && c.email === email) || (telefone && c.telefone === telefone)) || null;
   }
 
   async listar(filtroBusca?: string): Promise<Cliente[]> {
-    // TODO: [DB TEAM] SELECT * FROM clientes WHERE nome ILIKE $1 OR telefone ILIKE $1 OR email ILIKE $1
+    // TODO: [DB TEAM] SELECT * FROM clientes WHERE nome ILIKE $1 OR telefone ILIKE $1 OR email ILIKE $1 OR REGEXP_REPLACE(cpf, '\D', '', 'g') ILIKE $1
     if (!filtroBusca) return [...this.clientes];
     const termo = filtroBusca.toLowerCase();
+    const termoLimpo = termo.replace(/\D/g, '');
     return this.clientes.filter(
       c => c.nome.toLowerCase().includes(termo) ||
            c.telefone.includes(termo) ||
-           c.email.toLowerCase().includes(termo)
+           c.email.toLowerCase().includes(termo) ||
+           (c.cpf && c.cpf.includes(termo)) ||
+           (termoLimpo.length >= 3 && c.cpf && c.cpf.replace(/\D/g, '').includes(termoLimpo))
     );
   }
 

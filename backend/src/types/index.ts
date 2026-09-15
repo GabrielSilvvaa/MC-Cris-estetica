@@ -32,6 +32,7 @@ export interface SolicitacaoLGPD {
 export interface Cliente {
   id: string;
   nome: string;
+  cpf: string; // Formato: 000.000.000-00 (Obrigatório e único)
   telefone: string;
   email: string;
   data_nascimento: string; // YYYY-MM-DD

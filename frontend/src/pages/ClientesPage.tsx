@@ -60,10 +60,42 @@ export const ClientesPage: React.FC = () => {
   // Formulário de Novo Cliente
   const [formNovoCliente, setFormNovoCliente] = useState({
     nome: '',
+    cpf: '',
     telefone: '',
     email: '',
     data_nascimento: ''
   });
+
+  // Funções de formatação e validação de CPF no Frontend
+  const formatarCPFInput = (valor: string) => {
+    const limpo = valor.replace(/\D/g, '').slice(0, 11);
+    if (limpo.length <= 3) return limpo;
+    if (limpo.length <= 6) return `${limpo.slice(0, 3)}.${limpo.slice(3)}`;
+    if (limpo.length <= 9) return `${limpo.slice(0, 3)}.${limpo.slice(3, 6)}.${limpo.slice(6)}`;
+    return `${limpo.slice(0, 3)}.${limpo.slice(3, 6)}.${limpo.slice(6, 9)}-${limpo.slice(9, 11)}`;
+  };
+
+  const validarCPFFrontend = (cpf: string): boolean => {
+    const limpo = cpf.replace(/\D/g, '');
+    if (limpo.length !== 11) return false;
+    if (/^(\d)\1{10}$/.test(limpo)) return false;
+
+    let soma = 0;
+    for (let i = 0; i < 9; i++) {
+      soma += parseInt(limpo.charAt(i), 10) * (10 - i);
+    }
+    let resto = 11 - (soma % 11);
+    const digito1 = resto >= 10 ? 0 : resto;
+    if (digito1 !== parseInt(limpo.charAt(9), 10)) return false;
+
+    soma = 0;
+    for (let i = 0; i < 10; i++) {
+      soma += parseInt(limpo.charAt(i), 10) * (11 - i);
+    }
+    resto = 11 - (soma % 11);
+    const digito2 = resto >= 10 ? 0 : resto;
+    return digito2 === parseInt(limpo.charAt(10), 10);
+  };
 
   // Formulário de Solicitação LGPD
   const [formSolicitacaoLGPD, setFormSolicitacaoLGPD] = useState<{
@@ -144,17 +176,38 @@ export const ClientesPage: React.FC = () => {
 
   const handleSalvarNovoCliente = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!formNovoCliente.nome || !formNovoCliente.telefone) {
-      alert('Nome e telefone são obrigatórios.');
+    if (!formNovoCliente.nome.trim()) {
+      alert('O nome completo da cliente é obrigatório.');
+      return;
+    }
+
+    if (!formNovoCliente.cpf.trim()) {
+      alert('O campo CPF é obrigatório.');
+      return;
+    }
+
+    if (!validarCPFFrontend(formNovoCliente.cpf)) {
+      alert('CPF inválido. Certifique-se de preencher um CPF válido no formato 000.000.000-00.');
+      return;
+    }
+
+    if (!formNovoCliente.telefone.trim()) {
+      alert('O telefone / WhatsApp é obrigatório.');
       return;
     }
 
     try {
       setSalvando(true);
-      const novo = await api.criarCliente(formNovoCliente);
+      const novo = await api.criarCliente({
+        nome: formNovoCliente.nome.trim(),
+        cpf: formatarCPFInput(formNovoCliente.cpf),
+        telefone: formNovoCliente.telefone.trim(),
+        email: formNovoCliente.email.trim(),
+        data_nascimento: formNovoCliente.data_nascimento
+      });
       await carregarDados();
       setModalNovoClienteAberto(false);
-      setFormNovoCliente({ nome: '', telefone: '', email: '', data_nascimento: '' });
+      setFormNovoCliente({ nome: '', cpf: '', telefone: '', email: '', data_nascimento: '' });
       abrirFichaCliente(novo.id);
     } catch (err: any) {
       alert(err.message || 'Erro ao criar cliente.');
@@ -349,7 +402,7 @@ export const ClientesPage: React.FC = () => {
                 <Search className="w-4 h-4 text-[#A68A64] absolute left-3.5 top-1/2 -translate-y-1/2" />
                 <input
                   type="text"
-                  placeholder="Buscar por nome, telefone ou e-mail..."
+                  placeholder="Buscar por CPF (preferencial), nome, telefone ou e-mail..."
                   value={termoBusca}
                   onChange={e => setTermoBusca(e.target.value)}
                   className="w-full pl-9 pr-4 py-2 text-xs bg-[#FAF6F0] border border-[#E8DFD5] rounded-xl focus:bg-white focus:outline-none focus:border-[#C4A883]"
@@ -421,7 +474,10 @@ export const ClientesPage: React.FC = () => {
                             )}
                           </div>
 
-                          <div className="flex flex-wrap items-center gap-x-4 gap-y-1 mt-1 text-xs text-[#7A6C60]">
+                          <div className="flex flex-wrap items-center gap-x-3 gap-y-1.5 mt-1.5 text-xs text-[#7A6C60]">
+                            <span className="flex items-center gap-1 font-mono text-[11px] font-semibold text-[#4A3F35] bg-[#F4EFEA] px-2 py-0.5 rounded-md border border-[#E8DFD5]">
+                              CPF: {c.cpf || 'Não cadastrado'}
+                            </span>
                             <span className="flex items-center gap-1">
                               <Phone className="w-3 h-3 text-[#A68A64]" />
                               {c.telefone}
@@ -542,6 +598,14 @@ export const ClientesPage: React.FC = () => {
                 <div className="space-y-4 text-xs">
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
                     <div className="p-3.5 rounded-2xl bg-[#FAF6F0] border border-[#E8DFD5]">
+                      <span className="text-[11px] text-[#8C7D70] block mb-0.5">CPF (Identificador Único)</span>
+                      <span className="font-semibold font-mono text-[#2D241E] flex items-center gap-1.5 text-sm">
+                        <FileText className="w-4 h-4 text-[#A68A64]" />
+                        {fichaCliente.cliente.cpf || 'Não informado'}
+                      </span>
+                    </div>
+
+                    <div className="p-3.5 rounded-2xl bg-[#FAF6F0] border border-[#E8DFD5]">
                       <span className="text-[11px] text-[#8C7D70] block mb-0.5">Telefone / WhatsApp</span>
                       <span className="font-semibold text-[#2D241E] flex items-center gap-1.5 text-sm">
                         <Phone className="w-4 h-4 text-[#A68A64]" />
@@ -567,7 +631,7 @@ export const ClientesPage: React.FC = () => {
                       </span>
                     </div>
 
-                    <div className="p-3.5 rounded-2xl bg-[#FAF6F0] border border-[#E8DFD5]">
+                    <div className="p-3.5 rounded-2xl bg-[#FAF6F0] border border-[#E8DFD5] sm:col-span-2">
                       <span className="text-[11px] text-[#8C7D70] block mb-0.5">Status Consentimento LGPD</span>
                       <span className="font-semibold text-[#2D241E] flex items-center gap-1.5 text-sm">
                         <ShieldCheck className="w-4 h-4 text-[#3D7342]" />
@@ -1053,6 +1117,24 @@ export const ClientesPage: React.FC = () => {
                   placeholder="Nome da cliente"
                   className="w-full px-3 py-2 bg-[#FAF6F0] border border-[#E8DFD5] rounded-xl focus:bg-white focus:outline-none focus:border-[#C4A883]"
                 />
+              </div>
+
+              <div>
+                <label className="block font-semibold text-[#3D332A] mb-1">
+                  CPF * <span className="text-[11px] font-normal text-[#8C7D70]">(obrigatório - 000.000.000-00)</span>
+                </label>
+                <input
+                  type="text"
+                  required
+                  maxLength={14}
+                  value={formNovoCliente.cpf}
+                  onChange={e => setFormNovoCliente({ ...formNovoCliente, cpf: formatarCPFInput(e.target.value) })}
+                  placeholder="000.000.000-00"
+                  className="w-full px-3 py-2 bg-[#FAF6F0] border border-[#E8DFD5] rounded-xl font-mono focus:bg-white focus:outline-none focus:border-[#C4A883]"
+                />
+                <p className="text-[10px] text-[#8C7D70] mt-1">
+                  Identificador obrigatório para emissão de prontuário, ficha clínica e consentimento LGPD.
+                </p>
               </div>
 
               <div>

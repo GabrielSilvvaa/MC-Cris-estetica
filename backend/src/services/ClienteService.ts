@@ -13,6 +13,7 @@ import {
 } from '../types';
 
 import { GoogleDriveIntegration } from '../integrations/googleDrive';
+import { validarCPF, formatarCPF } from '../utils/cpfValidator';
 import { v4 as uuidv4 } from 'uuid';
 
 export class ClienteService {
@@ -68,10 +69,35 @@ export class ClienteService {
 
   async criarCliente(dados: {
     nome: string;
+    cpf: string;
     telefone: string;
-    email: string;
-    data_nascimento: string;
+    email?: string;
+    data_nascimento?: string;
   }): Promise<Cliente> {
+    if (!dados.nome || !dados.nome.trim()) {
+      throw new Error('O campo Nome é obrigatório.');
+    }
+
+    if (!dados.telefone || !dados.telefone.trim()) {
+      throw new Error('O campo Telefone é obrigatório.');
+    }
+
+    if (!dados.cpf || !dados.cpf.trim()) {
+      throw new Error('O campo CPF é obrigatório.');
+    }
+
+    if (!validarCPF(dados.cpf)) {
+      throw new Error('CPF inválido. Certifique-se de fornecer um CPF válido no formato 000.000.000-00.');
+    }
+
+    const cpfFormatado = formatarCPF(dados.cpf);
+
+    // Validação de duplicidade de CPF
+    const existeCpf = await this.clienteRepo.buscarPorCpf(cpfFormatado);
+    if (existeCpf) {
+      throw new Error('Já existe um cliente cadastrado com este CPF.');
+    }
+
     const existe = await this.clienteRepo.buscarPorEmailOuTelefone(dados.email, dados.telefone);
     if (existe) {
       throw new Error('Já existe um cliente cadastrado com este e-mail ou telefone.');
@@ -79,10 +105,11 @@ export class ClienteService {
 
     const novoCliente: Cliente = {
       id: `cli-${uuidv4().slice(0, 8)}`,
-      nome: dados.nome,
-      telefone: dados.telefone,
-      email: dados.email,
-      data_nascimento: dados.data_nascimento,
+      nome: dados.nome.trim(),
+      cpf: cpfFormatado,
+      telefone: dados.telefone.trim(),
+      email: dados.email ? dados.email.trim() : '',
+      data_nascimento: dados.data_nascimento || '',
       status_lgpd_consentimento: 'pendente',
       criado_em: new Date().toISOString(),
       atualizado_em: new Date().toISOString()
@@ -212,6 +239,7 @@ export class ClienteService {
     for (const c of inativos) {
       await this.clienteRepo.atualizar(c.id, {
         nome: `Cliente Anonimizado (${c.id.slice(0, 6)})`,
+        cpf: '000.000.000-00',
         email: `anonimizado_${c.id.slice(0, 6)}@retencao.lgpd`,
         telefone: '(00) 00000-0000',
         url_termo_assinado: undefined,

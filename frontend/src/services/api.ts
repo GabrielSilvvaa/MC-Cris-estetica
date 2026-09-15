@@ -131,9 +131,10 @@ class ApiService {
 
   async criarCliente(dados: {
     nome: string;
+    cpf: string;
     telefone: string;
-    email: string;
-    data_nascimento: string;
+    email?: string;
+    data_nascimento?: string;
   }): Promise<Cliente> {
     return this.request<Cliente>('/clientes', {
       method: 'POST',

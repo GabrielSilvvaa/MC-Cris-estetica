@@ -34,6 +34,7 @@ export interface IUsuarioRepository {
 
 export interface IClienteRepository {
   buscarPorId(id: string): Promise<Cliente | null>;
+  buscarPorCpf(cpf: string): Promise<Cliente | null>;
   buscarPorEmailOuTelefone(email?: string, telefone?: string): Promise<Cliente | null>;
   listar(filtroBusca?: string): Promise<Cliente[]>;
   salvar(cliente: Cliente): Promise<Cliente>;
